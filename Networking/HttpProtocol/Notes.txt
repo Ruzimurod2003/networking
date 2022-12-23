@@ -1,0 +1,118 @@
+Http methods    =>
+{
+    OPTIONS: возвращает список остальных методов HTTP, которые поддерживает сервер для указанного адреса URL
+    TRACE: служебный метод, который просто повторяет исходный запрос, полученный сервером. Полезен для идентификации любых изменений, внесенных в запрос объектами в сети, пока запрос находится в пути.
+    CONNECT: устанавливают туннель TCP/IP между исходным хостом и удаленным хостом.
+    GET: извлекает копию ресурса по URL-адресу, на который был отправлен HTTP-запрос.
+    HEAD: так же как и GET, извлекает копию ресурса по URL, только ожидает получения одних заголовков без тела ответа
+    POST: предназначен для отправки данных в теле запроса для их сохранения в виде нового ресурса на сервере
+    PUT: предназначен для отправки данных в теле запроса для изменения уже имеющегося ресурса на сервере
+    PATCH: предназначен для отправки данных в теле запроса для частичного изменения уже имеющегося ресурса на сервереL
+    DELETE: предназначен для удаления ресурса по указанному адресу URL
+}
+For example
+(
+    HttpMethod.Delete
+    HttpMethod customMethod = new HttpMethod("CUSTOM");
+)
+Http status codes   =>
+{
+    1XX: информационные коды, которые указывают, что запрос получен, и его обработка продолжается
+    2XX: коды, которые указывают на успешную обработку запроса
+    3XX: коды переадресации
+    4XX: коды, которые указывают, что запрос содержит ошибки. То есть ошибка возникла на стороне клиента, который отправил запрос
+    5XX: коды, которые указывают, что в процессе обработки запроса возникла ошибка на сервере. То есть запрос от клиента корректен, а проблема на стороне сервера
+}
+Upload files Web Api   =>
+{
+    var builder = WebApplication.CreateBuilder();
+    var app = builder.Build();
+    
+    app.MapPost("/upload", async (HttpContext context) =>
+    {
+        // получем коллецию загруженных файлов
+        IFormFileCollection files = context.Request.Form.Files;
+        // путь к папке, где будут храниться файлы
+        var uploadPath = $"{Directory.GetCurrentDirectory()}/uploads";
+        // создаем папку для хранения файлов
+        Directory.CreateDirectory(uploadPath);
+    
+        // пробегаемся по всем файлам
+        foreach (var file in files)
+        {
+            // формируем путь к файлу в папке uploads
+            string fullPath = $"{uploadPath}/{file.FileName}";
+    
+            // сохраняем файл в папку uploads
+            using (var fileStream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+        }
+        await context.Response.WriteAsync("Файлы успешно загружены");
+    });
+    
+    app.Run();
+}
+Upload files HttpClient =>
+{
+    using System.Net.Http.Headers;
+    class Program
+    {
+        static HttpClient httpClient = new HttpClient();
+        static async Task Main()
+        {
+            // адрес сервера
+            var serverAddress = "https://localhost:7094/upload";
+            // пусть к файлу
+            var filePath = @"D:\forest.jpg";
+    
+            // создаем MultipartFormDataContent
+            using var multipartFormContent = new MultipartFormDataContent();
+            // Загружаем отправляемый файл
+            var fileStreamContent = new StreamContent(File.OpenRead(filePath));
+            // Устанавливаем заголовок Content-Type
+            fileStreamContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            // Добавляем загруженный файл в MultipartFormDataContent
+            multipartFormContent.Add(fileStreamContent, name: "file", fileName: "forest.jpg");
+    
+            // Отправляем файл
+            using var response = await httpClient.PostAsync(serverAddress, multipartFormContent);
+            // считываем ответ
+            var responseText = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(responseText);
+        }
+    }
+}
+Cookies  add   =>
+{
+    Uri uri = new Uri("http://metanit.com");
+    Cookie nameCookie = new Cookie("name", "Tom");
+    Cookie emailCookie = new Cookie("email", "tom@localhost.com");
+    CookieContainer cookieContainer = new CookieContainer();
+    cookieContainer.Add(uri, nameCookie); // добавляем куки nameCookie для uri http://metanit.com
+    cookieContainer.Add(uri, emailCookie); // добавляем куки emailCookie для uri http://metanit.com
+------------------------------------------------------------------------------------
+    Uri uri = new Uri("http://metanit.com");
+    CookieContainer cookieContainer = new CookieContainer();
+ 
+    // установка кук
+    cookieContainer.SetCookies(uri, "name=Bob");
+    cookieContainer.SetCookies(uri, "email=bob@localhost.com");
+}
+Cookies get     =>
+{
+    // получаем все куки
+    var allCookies = cookieContainer.GetAllCookies();
+    foreach (Cookie cookie in allCookies)
+    {
+        Console.WriteLine($"{cookie.Name} : {cookie.Value}");
+    }
+    
+    // получаем куки только для uri http://metanit.com
+    var uriCookies = cookieContainer.GetCookies(uri);
+    foreach (Cookie cookie in uriCookies)
+    {
+        Console.WriteLine($"{cookie.Name} : {cookie.Value}");
+    }
+}

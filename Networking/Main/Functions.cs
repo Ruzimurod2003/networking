@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace HttpClientApp.Main
+namespace Networking.Main
 {
     public static class Functions
     {
